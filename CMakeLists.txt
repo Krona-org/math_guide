@@ -20,7 +20,7 @@ file(GLOB_RECURSE APP_SOURCES CONFIGURE_DEPENDS
     src/*.h
 )
 
-find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets Gui Qml Quick)
+find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets Gui Qml Quick Charts)
 
 qt_standard_project_setup()
 
@@ -38,6 +38,7 @@ target_link_libraries(math_guide PRIVATE
     Qt6::Gui
     Qt6::Qml
     Qt6::Quick
+    Qt6::Charts
 )
 
 set_target_properties(math_guide PROPERTIES
