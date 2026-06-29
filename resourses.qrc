@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/">
+        <file>res/image/kot_v_vode.png</file>
+    </qresource>
+</RCC>
