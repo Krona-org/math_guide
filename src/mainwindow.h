@@ -3,6 +3,14 @@
 #include <QPixmap>
 #include <QtCharts/QChartView>
 #include <QtCharts/QChart>
+#include <QVBoxLayout>
+#include <QScrollArea>
+#include <QMap>
+#include <QList>
+#include <QPropertyAnimation>
+#include <QParallelAnimationGroup>
+
+class DriverCard;
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -13,7 +21,6 @@ QT_END_NAMESPACE
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
-
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
@@ -37,7 +44,16 @@ private:
     void applyChartStyle();
     void clearChart();
 
+    // Для таблицы пилотов
+    QWidget *m_driverContainer = nullptr;
+    QVBoxLayout *m_driverLayout = nullptr;
+    QList<DriverCard*> m_driverCards;
+
+    void animateReorder(const QList<DriverCard*> &newOrder);
+    void sortDriversByPoints();
+    void shuffleDrivers();
+
 private slots:
     void on_pushButton_clicked();   // переключение диаграммы
-    void on_pushButton_2_clicked(); // пока пусто
+    void on_pushButton_2_clicked(); // перестановка пилотов
 };

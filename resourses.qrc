@@ -1,5 +1,7 @@
 <RCC>
     <qresource prefix="/">
         <file>res/image/kot_v_vode.png</file>
+        <file>res/fonts/saira-condensed-black.ttf</file>
     </qresource>
+    <qresource prefix="/backgroundImage/"/>
 </RCC>
