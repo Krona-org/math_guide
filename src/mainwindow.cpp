@@ -1,35 +1,24 @@
 #include <QVBoxLayout>
-#include <QBarSet>
-#include <QtCharts/QBarSeries>
-#include <QtCharts/QBarCategoryAxis>
-#include <QtCharts/QValueAxis>
-#include <QtCharts/QLineSeries>
 #include <QtCharts/QPieSeries>
 #include <QtCharts/QPieSlice>
+#include <qnamespace.h>
+
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include "stypehelper.hpp"
+#include "ui/stypehelper.hpp"
 
+#include "drivercard.h"
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
 
     ui->groupBox->setTitle("");
-    ui->groupBox_2->setTitle("");
     ui->groupBox->setAttribute(Qt::WA_TranslucentBackground);
-    ui->groupBox_2->setAttribute(Qt::WA_TranslucentBackground);
     ui->groupBox->setStyleSheet(StyleHelper::getGlassStyle());
-    ui->groupBox_2->setStyleSheet(StyleHelper::getGlassStyle());
 
-    // Кнопка переключения
     ui->pushButton->setText("Следующий вид");
-    ui->pushButton->setStyleSheet(
-        "QPushButton { background-color: rgba(255,255,255,40); border-radius: 8px;"
-        "color: white; padding: 6px; border: 1px solid rgba(255,255,255,80); }"
-        "QPushButton:hover { background-color: rgba(255,255,255,70); }"
-    );
+    ui->pushButton->setStyleSheet(StyleHelper::getStyleButtonGlass());
 
-    // Создаём chartView один раз
     m_chart = new QChart();
     m_chartView = new QChartView(m_chart);
     m_chartView->setRenderHint(QPainter::Antialiasing);
@@ -39,127 +28,123 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     layout->addWidget(m_chartView);
     ui->groupBox->setLayout(layout);
 
-    // Показываем первый вид
     showPieChart();
 
+    ui->widget_test->setStyleSheet(StyleHelper::getGlassStyle());
     m_originalPixmap = QPixmap(":/res/image/kot_v_vode.png");
+
+    QList<std::tuple<int,QString,QString,int>> drivers = {
+        {1,  "Verstappen",  "Red Bull",    400},
+        {2,  "Hamilton",    "Mercedes",    350},
+        {3,  "Leclerc",     "Ferrari",     300},
+        {4,  "Norris",      "McLaren",     280},
+        {5,  "Sainz",       "Ferrari",     260},
+        {6,  "Russell",     "Mercedes",    240},
+        {7,  "Perez",       "Red Bull",    220},
+        {8,  "Alonso",      "Aston Martin",200},
+        {9,  "Piastri",     "McLaren",     180},
+        {10, "Stroll",      "Aston Martin",150},
+        {11, "Gasly",       "Alpine",      120},
+        {12, "Ocon",        "Alpine",      100},
+        {13, "Albon",       "Williams",     80},
+        {14, "Bottas",      "Sauber",       60},
+        {15, "Zhou",        "Sauber",       50},
+        {16, "Hulkenberg",  "Haas",         40},
+        {17, "Magnussen",   "Haas",         30},
+        {18, "Tsunoda",     "RB",           20},
+        {19, "Ricciardo",   "RB",           10},
+        {20, "Sargeant",    "Williams",      5},
+    };
+
+    auto *scrollArea = new QScrollArea();
+    scrollArea->setWidgetResizable(true);
+    scrollArea->setStyleSheet(
+        "QScrollArea { background: transparent; border: none; }"
+        "QScrollBar:vertical { width: 4px; background: transparent; }"
+        "QScrollBar::handle:vertical { background: rgba(255,255,255,60); border-radius: 2px; }"
+    );
+
+    auto *container = new QWidget();
+    container->setStyleSheet("QWidget { background: transparent; border: none; }");
+
+    auto *vLayout = new QVBoxLayout(container);
+    vLayout->setSpacing(4);
+    vLayout->setContentsMargins(6, 6, 6, 6);
+
+    for (auto &[pos, name, team, pts] : drivers) {
+        vLayout->addWidget(new DriverCard(pos, name, team, pts, this));
+    }
+
+    vLayout->addStretch();
+    scrollArea->setWidget(container);
+
+    auto *wLayout = new QVBoxLayout();
+    wLayout->setContentsMargins(0, 0, 0, 0);
+    wLayout->addWidget(scrollArea);
+    ui->widget_test->setLayout(wLayout);
+
     updateBackground();
 }
 
-// --- Круговая диаграмма ---
 void MainWindow::showPieChart()
 {
     clearChart();
-    m_chart->setTitle("Круговая диаграмма");
+    m_chart->setTitle(" ");
 
     QPieSeries *series = new QPieSeries();
-    series->append("Алгебра", 40);
-    series->append("Геометрия", 30);
-    series->append("Физика", 20);
-    series->append("Прочее", 10);
+    series->append(" ", 25);
+    series->append(" ", 25);
+    series->append(" ", 25);
+    series->append(" ", 25);
 
-    series->slices().at(0)->setBrush(QColor("#e74c3c"));
-    series->slices().at(1)->setBrush(QColor("#3498db"));
-    series->slices().at(2)->setBrush(QColor("#2ecc71"));
-    series->slices().at(3)->setBrush(QColor("#f39c12"));
-    series->slices().at(0)->setExploded(true);
+    auto makeGradient = [](QColor c1, QColor c2) {
+        QLinearGradient g(0, 0, 1, 1);
+        g.setCoordinateMode(QGradient::ObjectBoundingMode);
+        g.setColorAt(0.0, c1);
+        g.setColorAt(1.0, c2);
+        return QBrush(g);
+    };
+
+    series->slices().at(0)->setBrush(makeGradient("#000000", "#000000"));
+    series->slices().at(1)->setBrush(makeGradient("#512451", "#492749"));
+    series->slices().at(2)->setBrush(makeGradient("#214735", "#006633"));
+    series->slices().at(3)->setBrush(makeGradient("#453f1d", "#4e2a1d"));
+
+    series->setHoleSize(0.6);
+
 
     for (QPieSlice *s : series->slices()) {
-        s->setLabelVisible(true);
-        s->setLabelColor(Qt::white);
+        s->setLabelVisible(false);
+        s->setLabelColor(Qt::black);
+        s->setBorderColor(Qt::transparent);  // убирает обводку
+        s->setBorderWidth(0);
+        s->setExplodeDistanceFactor(0.1);
+        
+        connect(s, &QPieSlice::clicked, series, [series, s]() {
+            for (QPieSlice *other : series->slices())
+                other->setExploded(false);
+            s->setExploded(true);
+        });
     }
 
     m_chart->addSeries(series);
     applyChartStyle();
 }
 
-// --- Столбчатая диаграмма ---
-void MainWindow::showBarChart()
-{
-    clearChart();
-    m_chart->setTitle("Столбчатая диаграмма");
-
-    QBarSet *set = new QBarSet("Баллы");
-    set->append({40, 30, 20, 10});
-    set->setColor(QColor("#3498db"));
-    set->setLabelColor(Qt::white);
-
-    QBarSeries *series = new QBarSeries();
-    series->append(set);
-    series->setLabelsVisible(true);
-
-    m_chart->addSeries(series);
-
-    QStringList categories = {"Алгебра", "Геометрия", "Физика", "Прочее"};
-    QBarCategoryAxis *axisX = new QBarCategoryAxis();
-    axisX->append(categories);
-    axisX->setLabelsColor(Qt::white);
-    m_chart->addAxis(axisX, Qt::AlignBottom);
-    series->attachAxis(axisX);
-
-    QValueAxis *axisY = new QValueAxis();
-    axisY->setRange(0, 50);
-    axisY->setLabelsColor(Qt::white);
-    m_chart->addAxis(axisY, Qt::AlignLeft);
-    series->attachAxis(axisY);
-
-    applyChartStyle();
-}
-
-// --- Линейный график ---
-void MainWindow::showLineChart()
-{
-    clearChart();
-    m_chart->setTitle("Линейный график");
-
-    QLineSeries *series = new QLineSeries();
-    series->append(0, 40);
-    series->append(1, 30);
-    series->append(2, 20);
-    series->append(3, 10);
-    series->setColor(QColor("#e74c3c"));
-
-    QPen pen(QColor("#e74c3c"));
-    pen.setWidth(3);
-    series->setPen(pen);
-
-    m_chart->addSeries(series);
-
-    QValueAxis *axisX = new QValueAxis();
-    axisX->setRange(0, 3);
-    axisX->setLabelsColor(Qt::white);
-    m_chart->addAxis(axisX, Qt::AlignBottom);
-    series->attachAxis(axisX);
-
-    QValueAxis *axisY = new QValueAxis();
-    axisY->setRange(0, 50);
-    axisY->setLabelsColor(Qt::white);
-    m_chart->addAxis(axisY, Qt::AlignLeft);
-    series->attachAxis(axisY);
-
-    applyChartStyle();
-}
-
-// --- Общий стиль графика ---
 void MainWindow::applyChartStyle()
 {
     m_chart->setBackgroundBrush(QBrush(QColor(0, 0, 0, 0)));
     m_chart->setTitleBrush(QBrush(Qt::white));
-    m_chart->setAnimationOptions(QChart::AllAnimations);
+    m_chart->setAnimationOptions(QChart::SeriesAnimations);
     m_chart->legend()->setLabelColor(Qt::white);
-    m_chart->legend()->setVisible(true);
+    m_chart->legend()->setVisible(false);
 }
 
-// --- Кнопка переключения ---
-void MainWindow::on_pushButton_clicked()
+void MainWindow::clearChart()
 {
-    m_currentChartType = (m_currentChartType + 1) % 3;
-
-    switch (m_currentChartType) {
-        case 0: showPieChart();  break;
-        case 1: showBarChart();  break;
-        case 2: showLineChart(); break;
-    }
+    m_chart->removeAllSeries();
+    for (QAbstractAxis *axis : m_chart->axes())
+        m_chart->removeAxis(axis);
 }
 
 void MainWindow::updateBackground()
@@ -178,26 +163,22 @@ void MainWindow::updateBackground()
     this->setAutoFillBackground(true);
 }
 
-// --- Вспомогательная функция очистки ---
-void MainWindow::clearChart()
-{
-    m_chart->removeAllSeries();  // <-- вот что здесь должно быть!
-    
-    // Удаляем все оси
-    for (QAbstractAxis *axis : m_chart->axes()) {
-        m_chart->removeAxis(axis);
-    }
-}
-
 void MainWindow::resizeEvent(QResizeEvent *event)
 {
+    m_chart->setAnimationOptions(QChart::NoAnimation);
     QMainWindow::resizeEvent(event);
     updateBackground();
+    m_chart->setAnimationOptions(QChart::SeriesAnimations);
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+void MainWindow::on_pushButton_clicked()
+{
+    // пока пусто
 }
 
 void MainWindow::on_pushButton_2_clicked()

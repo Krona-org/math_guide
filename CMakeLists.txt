@@ -18,6 +18,9 @@ file(GLOB_RECURSE APP_SOURCES CONFIGURE_DEPENDS
     src/*.cpp
     src/*.hpp
     src/*.h
+    src/ui/*hpp
+    src/data/*hpp
+    src/widgets/*hpp
 )
 
 find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets Gui Qml Quick Charts)
