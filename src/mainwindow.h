@@ -22,8 +22,8 @@ class MainWindow : public QMainWindow
 {
     Q_OBJECT
 public:
-    MainWindow(QWidget *parent = nullptr);
-    ~MainWindow();
+    explicit MainWindow(QWidget *parent = nullptr);
+    ~MainWindow() override;
 
 protected:
     void resizeEvent(QResizeEvent *event) override;
@@ -32,11 +32,12 @@ private:
     Ui::MainWindow *ui;
     QPixmap m_originalPixmap;
 
-    // Для диаграммы
-    QChartView *m_chartView;
-    QChart *m_chart;
-    int m_currentChartType = 0;  // 0=круговая, 1=столбчатая, 2=линейная
+    // Диаграмма
+    QChartView *m_chartView = nullptr;
+    QChart *m_chart = nullptr;
+    int m_currentChartType = 0; // 0=круговая, 1=столбчатая, 2=линейная
 
+    void setupDrivers();
     void updateBackground();
     void showPieChart();
     void showBarChart();
@@ -44,12 +45,13 @@ private:
     void applyChartStyle();
     void clearChart();
 
-    // Для таблицы пилотов
+    // Таблица пилотов
     QWidget *m_driverContainer = nullptr;
     QVBoxLayout *m_driverLayout = nullptr;
     QList<DriverCard*> m_driverCards;
 
     void animateReorder(const QList<DriverCard*> &newOrder);
+    void renumberByListOrder(const QList<DriverCard*> &list); // 1..N по порядку в списке
     void sortDriversByPoints();
     void shuffleDrivers();
 

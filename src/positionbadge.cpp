@@ -1,123 +1,68 @@
 #include "positionbadge.h"
 #include <QPainter>
-#include <QFontMetrics>
-#include <QRandomGenerator>
-#include <QtMath>
 
 PositionBadge::PositionBadge(int position, QWidget *parent)
     : QWidget(parent), m_position(position)
 {
-    m_font = QFont("Saira Condensed", 16, QFont::Black, /*italic=*/true);
+    m_cached = coloredPixmap();
     setMinimumSize(sizeHint());
 }
 
 void PositionBadge::setPosition(int position)
 {
     m_position = position;
+    m_cached = coloredPixmap();
     updateGeometry();
     update();
 }
 
-QColor PositionBadge::badgeColor() const
+QPixmap PositionBadge::coloredPixmap() const
 {
+    int clamped = qBound(1, m_position, 30);
+   QPixmap src(QString(":/numbers/res/numbers/%1.png").arg(clamped));
+    if (src.isNull()) {
+        qWarning() << "Не найдена картинка для позиции" << clamped
+                    << "— проверь .qrc и путь resources/numbers/";
+        return src;
+    }
+
+    QPixmap scaled = src.scaledToHeight(kTargetHeight, Qt::SmoothTransformation);
+
+    QColor tint;
     switch (m_position) {
-        case 1: return QColor("#FFD700");
-        case 2: return QColor("#C0C0C0");
-        case 3: return QColor("#CD7F32");
-        default: return Qt::white;
+        case 1: tint = QColor("#FFD700"); break;
+        case 2: tint = QColor("#C0C0C0"); break;
+        case 3: tint = QColor("#CD7F32"); break;
+        default: return scaled; // остальные остаются белыми как в исходнике
     }
-}
 
-// Строит контур цифры так, чтобы его реальный bounding box (с учётом
-// наклона италика в обе стороны) гарантированно помещался в [margin..w-margin].
-QPainterPath PositionBadge::buildDigitPath() const
-{
-    QString text = QString::number(m_position);
-    QFontMetrics fm(m_font);
+    QPixmap result(scaled.size());
+    result.fill(Qt::transparent);
+    QPainter p(&result);
+    p.drawPixmap(0, 0, scaled);
+    p.setCompositionMode(QPainter::CompositionMode_SourceIn);
+    p.fillRect(result.rect(), tint);
+    p.end();
 
-    // черновой путь в (0, ascent), чтобы узнать реальные границы глифа
-    QPainterPath raw;
-    raw.addText(QPointF(0, fm.ascent()), m_font, text);
-    QRectF rb = raw.boundingRect();
-
-    // сдвигаем так, чтобы левый-верхний угол реального контура был в (margin, margin)
-    QPainterPath path;
-    path.addText(QPointF(kMargin - rb.left(), kMargin - rb.top() + fm.ascent()), m_font, text);
-    return path;
-}
-
-// Строит область "среза" с рваным неровным верхним краем (зигзаг),
-// которая идёт от ~55-70% высоты цифры до самого низа.
-// Используется как доп. клип поверх контура цифры.
-QPainterPath PositionBadge::buildTornEdgePath(const QRectF &b) const
-{
-    // фиксированный сид на позицию — край рваный, но не "дёргается" при каждой перерисовке
-    QRandomGenerator rng(quint32(m_position * 7919 + 17));
-
-    qreal left   = b.left() - b.height();
-    qreal right  = b.right() + b.height();
-    qreal bottom = b.bottom() + 6;
-    qreal baseY  = b.top() + b.height() * 0.6; // средняя линия среза
-
-    qreal amplitude = b.height() * 0.16; // насколько сильно "рвётся" край
-    qreal step = qMax(4.0, b.height() * 0.10); // шаг по X между точками зигзага
-
-    QPainterPath torn;
-    bool first = true;
-    for (qreal x = left; x <= right; x += step) {
-        qreal jitter = (rng.generateDouble() - 0.5) * 2.0 * amplitude;
-        qreal y = baseY + jitter;
-        if (first) {
-            torn.moveTo(x, y);
-            first = false;
-        } else {
-            torn.lineTo(x, y);
-        }
-    }
-    // замыкаем контур вниз и обратно — получаем область от рваной линии до низа
-    torn.lineTo(right, bottom);
-    torn.lineTo(left, bottom);
-    torn.closeSubpath();
-
-    return torn;
+    return result;
 }
 
 QSize PositionBadge::sizeHint() const
 {
-    QPainterPath path = buildDigitPath();
-    QRectF b = path.boundingRect();
-    return QSize(qCeil(b.right() + kMargin), qCeil(b.bottom() + kMargin));
+    if (m_cached.isNull())
+        return QSize(30, kTargetHeight + 8);
+    return m_cached.size() + QSize(8, 8); // небольшой запас по краям
 }
 
 void PositionBadge::paintEvent(QPaintEvent *)
 {
+    if (m_cached.isNull()) return;
+
     QPainter p(this);
-    p.setRenderHint(QPainter::Antialiasing);
+    p.setRenderHint(QPainter::SmoothPixmapTransform);
 
-    QPainterPath digitPath = buildDigitPath();
-    QRectF b = digitPath.boundingRect();
-    if (b.isEmpty()) return;
-
-    // 1. базовая заливка всей цифры
-    p.fillPath(digitPath, badgeColor());
-
-    // 2. рваная область среза (нижняя часть с неровным краем)
-    QPainterPath tornArea = buildTornEdgePath(b);
-
-    p.save();
-    p.setClipPath(digitPath);             // не выходим за форму цифры
-    p.setClipPath(tornArea, Qt::IntersectClip); // только рваная нижняя зона
-
-    // тёмная подложка под штриховкой — создаёт ощущение "вырванного" куска
-    p.fillPath(digitPath, QColor("#1a1a1a"));
-
-    // диагональные штрихи поверх тёмной зоны
-    QPen pen(QColor(255, 255, 255, 60), qMax(1.0, b.height() * 0.05));
-    p.setPen(pen);
-    qreal hstep = qMax(3.0, b.height() * 0.14);
-    for (qreal x = b.left() - b.height(); x < b.right() + b.height(); x += hstep) {
-        p.drawLine(QPointF(x, b.bottom() + 6),
-                   QPointF(x + b.height() * 0.5, b.top() - 6));
-    }
-    p.restore();
+    // центрируем картинку внутри виджета
+    int x = (width() - m_cached.width()) / 2;
+    int y = (height() - m_cached.height()) / 2;
+    p.drawPixmap(x, y, m_cached);
 }

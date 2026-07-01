@@ -1,26 +1,23 @@
 #pragma once
 #include <QWidget>
-#include <QFont>
+#include <QPixmap>
 #include <QColor>
-#include <QPainterPath>
 
 class PositionBadge : public QWidget {
     Q_OBJECT
 public:
     explicit PositionBadge(int position, QWidget *parent = nullptr);
     void setPosition(int position);
-    QSize sizeHint() const override;   // <-- перенесено сюда, теперь public
+    QSize sizeHint() const override;
 
 protected:
     void paintEvent(QPaintEvent *event) override;
 
 private:
-    QColor badgeColor() const;
-    QPainterPath buildDigitPath() const;
-    QPainterPath buildTornEdgePath(const QRectF &b) const;
+    QPixmap coloredPixmap() const;
 
     int m_position = 0;
-    QFont m_font;
+    QPixmap m_cached; // пересчитывается только при смене позиции, не при каждой отрисовке
 
-    static constexpr int kMargin = 6;
+    static constexpr int kTargetHeight = 22; // высота цифры в px, подгони под свою карточку
 };

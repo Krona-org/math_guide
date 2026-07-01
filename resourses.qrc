@@ -3,5 +3,36 @@
         <file>res/image/kot_v_vode.png</file>
         <file>res/fonts/saira-condensed-black.ttf</file>
     </qresource>
-    <qresource prefix="/backgroundImage/"/>
+    <qresource prefix="/numbers">
+        <file>res/numbers/1.png</file>
+        <file>res/numbers/10.png</file>
+        <file>res/numbers/11.png</file>
+        <file>res/numbers/12.png</file>
+        <file>res/numbers/13.png</file>
+        <file>res/numbers/16.png</file>
+        <file>res/numbers/15.png</file>
+        <file>res/numbers/14.png</file>
+        <file>res/numbers/17.png</file>
+        <file>res/numbers/18.png</file>
+        <file>res/numbers/19.png</file>
+        <file>res/numbers/2.png</file>
+        <file>res/numbers/20.png</file>
+        <file>res/numbers/21.png</file>
+        <file>res/numbers/22.png</file>
+        <file>res/numbers/23.png</file>
+        <file>res/numbers/24.png</file>
+        <file>res/numbers/25.png</file>
+        <file>res/numbers/26.png</file>
+        <file>res/numbers/27.png</file>
+        <file>res/numbers/28.png</file>
+        <file>res/numbers/29.png</file>
+        <file>res/numbers/3.png</file>
+        <file>res/numbers/30.png</file>
+        <file>res/numbers/4.png</file>
+        <file>res/numbers/5.png</file>
+        <file>res/numbers/6.png</file>
+        <file>res/numbers/7.png</file>
+        <file>res/numbers/8.png</file>
+        <file>res/numbers/9.png</file>
+    </qresource>
 </RCC>
